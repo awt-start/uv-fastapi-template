@@ -1,4 +1,4 @@
- 极简 FastAPI 项目模板说明文档  
+极简 FastAPI 项目模板说明文档  
 
 ---
 
@@ -238,10 +238,51 @@ USER appuser
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
+### 使用Docker Compose
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - SECRET_KEY=${SECRET_KEY:-your-super-secret-jwt-key-here}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - DATABASE_URL=sqlite+aiosqlite:///./app.db
+    volumes:
+      - ./app.db:/app/app.db
+    restart: unless-stopped
+```
+
 ### 构建运行
 ```bash
-docker build -t fastapi-app .
-docker run -d -p 8000:8000 --env-file .env fastapi-app
+# 使用Docker直接构建
+ docker build -t fastapi-app .
+ docker run -d -p 8000:8000 --env-file .env fastapi-app
+
+# 或使用Docker Compose
+ docker-compose up -d
+```
+
+## 🤖 GitHub Action 自动打包镜像
+
+项目已配置GitHub Action，在代码推送到`main`分支或创建标签时自动构建并推送Docker镜像到GitHub Container Registry。
+
+### 配置文件
+`.github/workflows/docker-image.yml`
+
+### 主要功能
+- 自动构建Docker镜像
+- 支持多标签（分支名、PR号、语义化版本）
+- 缓存构建层以提高速度
+- 自动推送到GitHub Container Registry
+
+### 使用镜像
+```bash
+docker pull ghcr.io/{your-username}/{your-repository}:main
 ```
 
 ---
