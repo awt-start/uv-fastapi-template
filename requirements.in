@@ -1,0 +1,21 @@
+# FastAPI框架
+fastapi
+
+# 配置管理
+pydantic-settings
+
+# 数据库
+sqlalchemy
+aiosqlite
+
+# 密码安全
+passlib[bcrypt]
+python-jose[cryptography]
+
+# ASGI服务器
+uvicorn[standard]
+
+# 测试框架
+pytest
+httpx
+pytest-asyncio
