@@ -1,6 +1,6 @@
 [project]
 name = "uv-fastapi-template"
-version = "0.1.0"
+version = "1.0.0"
 description = "A minimal FastAPI template with uv dependency manager"
 authors = [{ name = "Author", email = "author@example.com" }]
 requires-python = ">=3.10"
