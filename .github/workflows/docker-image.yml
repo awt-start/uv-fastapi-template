@@ -87,12 +87,4 @@ jobs:
           image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH' # 仅关注高危和严重漏洞
-
-      # 8. 将 Trivy 扫描结果上传到 GitHub Security 标签页
-      - name: 📤 Upload Trivy Scan Results
-        uses: github/codeql-action/upload-sarif@v3
-        # 无论前面的步骤是否失败，都尝试上传报告，以便于分析
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH' # 仅关注高危和严重漏

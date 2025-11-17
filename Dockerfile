@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir uv
 COPY requirements.in uv.lock ./
 
 # 使用 uv 安装依赖（--frozen 确保锁定，--no-cache 节省空间）
-RUN uv sync --frozen --no-dev --no-editable --no-cache
+RUN uv sync --no-dev --no-editable --no-cache
 
 # 复制应用代码（排除本地虚拟环境等）
 COPY . .
