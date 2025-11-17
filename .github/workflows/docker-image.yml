@@ -41,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ github.repository }}
           tags: |
             # 为推送到主分支的构建添加 'latest' 标签
             type=raw,value=latest,enable={{is_default_branch}}
