@@ -6,8 +6,12 @@ from datetime import timedelta
 from app.core import security
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.logger import get_logger
 from app.crud import authenticate_user, create_user
 from app.schemas import Token, UserCreate, UserOut
+
+# 获取日志实例
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -24,6 +28,7 @@ async def login(
     """
     user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        logger.warning(f"登录失败: 邮箱 {form_data.username} 密码错误")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="邮箱或密码错误",
@@ -37,6 +42,7 @@ async def login(
         expires_delta=access_token_expires,
     )
 
+    logger.info(f"登录成功: 用户 {user.email} (ID: {user.id})")
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -51,4 +57,5 @@ async def register(
     创建新用户并返回用户信息
     """
     user = await create_user(db, user_in=user_in)
+    logger.info(f"用户注册成功: {user.email} (ID: {user.id})")
     return user

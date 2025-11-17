@@ -4,7 +4,11 @@ from fastapi import HTTPException, status
 from app.models import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
+from app.core.logger import get_logger
 from typing import Union, List
+
+# 获取日志实例
+logger = get_logger(__name__)
 
 
 async def get_user(db: AsyncSession, user_id: int) -> Union[User, None]:
@@ -51,6 +55,7 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
     # 检查邮箱是否已存在
     existing_user = await get_user_by_email(db, email=user_in.email)
     if existing_user:
+        logger.warning(f"创建用户失败: 邮箱 {user_in.email} 已被注册")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="该邮箱已被注册",
@@ -69,6 +74,7 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
     await db.commit()
     await db.refresh(user)
 
+    logger.info(f"创建用户成功: {user.email} (ID: {user.id})")
     return user
 
 
@@ -100,6 +106,7 @@ async def update_user(db: AsyncSession, user: User, user_in: UserUpdate) -> User
     await db.commit()
     await db.refresh(user)
 
+    logger.info(f"更新用户成功: {user.email} (ID: {user.id})")
     return user
 
 
@@ -119,9 +126,12 @@ async def authenticate_user(
     """
     user = await get_user_by_email(db, email=email)
     if not user:
+        logger.warning(f"用户认证失败: 邮箱 {email} 不存在")
         return None
     if not verify_password(password, user.hashed_password):
+        logger.warning(f"用户认证失败: 邮箱 {email} 密码错误")
         return None
+    logger.info(f"用户认证成功: {user.email} (ID: {user.id})")
     return user
 
 

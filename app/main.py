@@ -13,8 +13,13 @@ from fastapi.responses import JSONResponse
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import engine
+from app.core.logger import setup_logger, get_logger
 from app.models import Base
 from app.models.response import R
+
+# 设置日志
+setup_logger()
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -32,16 +37,16 @@ async def lifespan(app: FastAPI):
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        print(f"✓ 数据库表创建成功")
+        logger.info("✓ 数据库表创建成功")
     except Exception as e:
-        print(f"✗ 数据库初始化失败: {e}")
+        logger.error(f"✗ 数据库初始化失败: {e}")
         raise
 
     yield
 
     # 关闭逻辑
     await engine.dispose()
-    print("✓ 应用已关闭，资源已释放")
+    logger.info("✓ 应用已关闭，资源已释放")
 
 
 def create_application() -> FastAPI:
