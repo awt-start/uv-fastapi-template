@@ -1,55 +1,99 @@
-name: Build and Push Docker Image
+# GitHub Actions 工作流：构建并推送 Docker 镜像
+name: CI/CD - Build and Push Docker Image
 
+# 触发工作流的事件
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
+    branches: [ "main" ] # 仅在主分支上推送时触发
+    tags: [ 'v*.*.*' ]     # 在推送版本标签时触发
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ] # 在向主分支发起 PR 时触发
+
+# 并发控制：确保同一分支/PR只运行最新的工作流，自动取消旧的运行
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-push-image:
+    name: Build and Push Image
     runs-on: ubuntu-latest
+    # 为作业设置权限，以允许其推送到 GitHub Packages 和上传安全报告
     permissions:
       contents: read
       packages: write
+      security-events: write # 上传 Trivy 安全扫描结果所需
 
     steps:
       # 1. 签出代码
-      - name: Checkout repository
+      - name: ⬇️ Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. 设置Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 3. 登录到GitHub Container Registry
-      - name: Log in to the Container registry
+      # 2. 登录到 GitHub Container Registry (GHCR)
+      - name: 🔑 Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 4. 提取镜像标签
-      - name: Extract metadata (tags, labels) for Docker
+      # 3. 提取 Docker 镜像的元数据（标签和标注）
+      - name: 🏷️ Extract Docker Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
+            # 为推送到主分支的构建添加 'latest' 标签
+            type=raw,value=latest,enable={{is_default_branch}}
+            # 为语义化版本标签 (如 v1.2.3) 创建多级标签 (1.2.3, 1.2)
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # 为分支推送添加分支名标签
+            type=ref,event=branch
+            # 为 PR 添加 'pr-NUMBER' 标签
+            type=ref,event=pr
+            # 添加短格式的 git SHA 作为标签，用于精确追溯
+            type=sha,prefix=,format=short
 
-      # 5. 构建并推送Docker镜像
-      - name: Build and push Docker image
+      # 4. 设置 QEMU，以支持多平台构建
+      - name: 🏗️ Set up QEMU for Multi-Platform Builds
+        uses: docker/setup-qemu-action@v3
+
+      # 5. 设置 Docker Buildx，使用更高级的构建功能
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 6. 构建并推送 Docker 镜像
+      - name: 📦 Build and Push Docker Image
+        id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
+          # 支持构建 amd64 和 arm64 两种架构的镜像
+          platforms: linux/amd64,linux/arm64
+          # 仅在非 PR 事件中推送到镜像仓库
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # 使用 GitHub Actions 缓存加速后续构建
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # 7. 使用 Trivy 扫描镜像中的漏洞
+      - name: 🛡️ Scan for Vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          # 使用元数据步骤生成的第一个标签作为扫描目标
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH' # 仅关注高危和严重漏洞
+
+      # 8. 将 Trivy 扫描结果上传到 GitHub Security 标签页
+      - name: 📤 Upload Trivy Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        # 无论前面的步骤是否失败，都尝试上传报告，以便于分析
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
