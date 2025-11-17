@@ -1,19 +1,34 @@
-# 使用官方 Python 3.10 镜像（你指定的版本）
+# 使用官方 Python 3.10 镜像
 FROM python:3.10-slim
+
+# 设置环境变量，避免 Python 写入 .pyc 文件
+ENV PYTHONDONTWRITEBYTECODE 1
+# 确保 Python 输出直接发送到终端，方便查看日志
+ENV PYTHONUNBUFFERED 1
 
 # 设置工作目录
 WORKDIR /app
 
-# 安装 uv（现代 Python 包管理器）
+# 1. 先安装系统依赖
+#    将这一步与下面的依赖安装分开，可以利用 Docker 缓存。
+#    只要这部分不改变，后续的步骤就可以使用缓存。
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libc-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. 安装 uv
 RUN pip install --no-cache-dir uv
 
-# 复制依赖声明文件
+# 3. 复制依赖声明文件
 COPY requirements.in uv.lock ./
 
-# 使用 uv 安装依赖（--frozen 确保锁定，--no-cache 节省空间）
-RUN uv sync --no-dev --no-editable --no-cache
+# 4. 使用 uv 安装依赖
+#    --frozen: 严格按照 uv.lock 安装，保证构建一致性
+RUN uv sync --frozen --no-dev --no-editable --no-cache
 
-# 复制应用代码（排除本地虚拟环境等）
+# 5. 复制应用代码
+#    将代码复制放在依赖安装之后，这样修改代码就不会导致依赖重新安装
 COPY . .
 
 # 创建非 root 用户（安全）
