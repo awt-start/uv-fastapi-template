@@ -30,8 +30,8 @@ RUN uv pip install --system --no-cache -r requirements.txt
 COPY ./app ./app
 
 # 6. 可选：复制 alembic 相关文件（如果存在）
-COPY ./alembic.ini ./alembic.ini
-COPY ./alembic ./alembic
+# COPY ./alembic.ini ./alembic.ini
+# COPY ./alembic ./alembic
 
 # 7. 创建非 root 用户（安全）
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
