@@ -21,6 +21,7 @@ setup_logging()
 logger = get_logger(__name__)
 from app.middleware.LoggingMiddleware import LoggingMiddleware
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -122,33 +123,10 @@ def register_routes(application: FastAPI) -> None:
             data={
                 "version": "1.0.0",
                 "author": "芒星",
+                "description": "这是一个基于 FastAPI 的 RESTful API 服务",
+                "docs": f"{settings.API_V1_STR}/docs",
             }
         )
-
-    @application.get(
-        "/health",
-        tags=["基础"],
-        summary="健康检查",
-        description="检查服务运行状态",
-        status_code=status.HTTP_200_OK,
-        response_model=R,
-    )
-    async def health_check() -> R:
-        """健康检查接口"""
-        return R.ok(data={"status": "healthy"})
-
-    @application.get(
-        "/page",
-        tags=["基础"],
-        summary="分页测试",
-        description="测试分页功能",
-        status_code=status.HTTP_200_OK,
-        response_model=R,
-    )
-    async def page_test() -> R:
-        """分页测试接口"""
-        data = [{"id": i, "name": f"用户{i}"} for i in range(1, 9999)]
-        return R.ok_page(PageInfo.from_list(data, page=1, page_size=5))
 
 
 # 创建应用实例
