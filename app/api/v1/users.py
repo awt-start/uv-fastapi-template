@@ -8,6 +8,7 @@ from app.core.logger import get_logger
 from app.crud import get_user, get_users, update_user
 from app.models import User
 from app.schemas import UserOut, UserUpdate
+from app.models.response import success, error,CodeEnum,R
 
 # 获取日志实例
 logger = get_logger(__name__)
@@ -15,7 +16,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.get("/me", response_model=UserOut)
+@router.get("/me", response_model=R[UserOut])
 async def read_users_me(
     current_user: User = Depends(get_current_user),
 ):
@@ -25,10 +26,10 @@ async def read_users_me(
     需要有效的JWT令牌
     """
     logger.info(f"获取当前用户信息: {current_user.email} (ID: {current_user.id})")
-    return current_user
+    return success(data=current_user)
 
 
-@router.get("/{user_id}", response_model=UserOut)
+@router.get("/{user_id}", response_model=R[UserOut])
 async def read_user(
     user_id: int,
     db: AsyncSession = Depends(get_db),
@@ -47,10 +48,10 @@ async def read_user(
             detail="用户不存在",
         )
     logger.info(f"获取用户信息: 用户 {user.email} (ID: {user.id})")
-    return user
+    return success(data=user)
 
 
-@router.get("/", response_model=List[UserOut])
+@router.get("/", response_model=R[List[UserOut]])
 async def read_users(
     skip: int = 0,
     limit: int = 100,
@@ -66,10 +67,10 @@ async def read_users(
     logger.info(
         f"获取用户列表: 跳过 {skip} 条，限制 {limit} 条，共返回 {len(users)} 条"
     )
-    return users
+    return success(data=users)
 
 
-@router.put("/{user_id}", response_model=UserOut)
+@router.put("/{user_id}", response_model=R[UserOut])
 async def update_user_info(
     user_id: int,
     user_in: UserUpdate,
@@ -101,4 +102,4 @@ async def update_user_info(
 
     user = await update_user(db, user=user, user_in=user_in)
     logger.info(f"更新用户信息成功: 用户 {user.email} (ID: {user.id})")
-    return user
+    return success(data=user)

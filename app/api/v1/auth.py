@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.logger import get_logger
 from app.crud import authenticate_user, create_user
 from app.schemas import Token, UserCreate, UserOut
-
+from app.models.response import success, error,CodeEnum,R
 # 获取日志实例
 logger = get_logger(__name__)
 
@@ -29,12 +29,8 @@ async def login(
     user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         logger.warning(f"登录失败: 邮箱 {form_data.username} 密码错误")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="邮箱或密码错误",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+        return R.fail(msg="邮箱或密码错误",code=CodeEnum.PARAM_ERROR)
+  
     # 创建访问令牌
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
@@ -43,7 +39,11 @@ async def login(
     )
 
     logger.info(f"登录成功: 用户 {user.email} (ID: {user.id})")
-    return {"access_token": access_token, "token_type": "bearer"}
+    return  {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user,
+    }
 
 
 @router.post("/register", response_model=UserOut)
@@ -58,4 +58,4 @@ async def register(
     """
     user = await create_user(db, user_in=user_in)
     logger.info(f"用户注册成功: {user.email} (ID: {user.id})")
-    return user
+    return success(data=user)

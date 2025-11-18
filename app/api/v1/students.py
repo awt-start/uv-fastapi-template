@@ -15,7 +15,7 @@ from app.crud import (
 )
 from app.models import User, Student
 from app.schemas import StudentOut, StudentCreate, StudentUpdate
-from app.models.response import success, error
+from app.models.response import success, error,CodeEnum,R
 
 # 获取日志实例
 logger = get_logger(__name__)
@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_model=List[StudentOut])
+@router.get("/", response_model=R[List[StudentOut]])
 async def read_students(
     skip: int = 0,
     limit: int = 100,
@@ -42,7 +42,7 @@ async def read_students(
     return success(data=students)
 
 
-@router.get("/{student_id}", response_model=StudentOut)
+@router.get("/{student_id}", response_model=R[StudentOut])
 async def read_student(
     student_id: int,
     db: AsyncSession = Depends(get_db),
@@ -66,7 +66,7 @@ async def read_student(
     return success(data=student)
 
 
-@router.post("/", response_model=StudentOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=R[StudentOut], status_code=status.HTTP_201_CREATED)
 async def create_new_student(
     student_in: StudentCreate,
     db: AsyncSession = Depends(get_db),
@@ -95,7 +95,7 @@ async def create_new_student(
     return success(data=student)
 
 
-@router.put("/{student_id}", response_model=StudentOut)
+@router.put("/{student_id}", response_model=R[StudentOut])
 async def update_student_info(
     student_id: int,
     student_in: StudentUpdate,
