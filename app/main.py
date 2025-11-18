@@ -8,19 +8,18 @@ from typing import Any, Dict
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import engine
-from app.core.logger import setup_logger, get_logger
+from app.core.logger import get_structured_logger, setup_logging, get_logger
 from app.models import Base
 from app.models.response import R, PageInfo
 
 # 设置日志
-setup_logger()
+setup_logging()
 logger = get_logger(__name__)
-
+from app.middleware.LoggingMiddleware import LoggingMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,6 +64,9 @@ def create_application() -> FastAPI:
         redoc_url=f"{settings.API_V1_STR}/redoc",
         lifespan=lifespan,
     )
+
+    # 添加日志中间件
+    application.add_middleware(LoggingMiddleware)
 
     # 配置 CORS
     configure_cors(application)
@@ -112,13 +114,12 @@ def register_routes(application: FastAPI) -> None:
         tags=["基础"],
         summary="根路径",
         description="API 欢迎页面和基本信息",
-        response_model=R[Dict[str, str]]
+        response_model=R[Dict[str, Any]],
     )
     async def index() -> R:
         """根路径健康检查"""
         return R.ok(
             data={
-                "name": settings.PROJECT_NAME,
                 "version": "1.0.0",
                 "author": "芒星",
             }
@@ -130,7 +131,7 @@ def register_routes(application: FastAPI) -> None:
         summary="健康检查",
         description="检查服务运行状态",
         status_code=status.HTTP_200_OK,
-        response_model=R[Dict[str, str]]
+        response_model=R,
     )
     async def health_check() -> R:
         """健康检查接口"""
@@ -146,7 +147,7 @@ def register_routes(application: FastAPI) -> None:
     )
     async def page_test() -> R:
         """分页测试接口"""
-        data = [{"id": i, "name": f"用户{i}"} for i in range(1, 11)]
+        data = [{"id": i, "name": f"用户{i}"} for i in range(1, 9999)]
         return R.ok_page(PageInfo.from_list(data, page=1, page_size=5))
 
 
