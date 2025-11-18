@@ -6,6 +6,14 @@ from app.crud.user import (
     authenticate_user,
     get_users,
 )
+from app.crud.student import (
+    get_student,
+    get_student_by_student_id,
+    create_student,
+    update_student,
+    get_students,
+    delete_student,
+)
 
 __all__ = [
     "get_user",
@@ -14,4 +22,10 @@ __all__ = [
     "update_user",
     "authenticate_user",
     "get_users",
+    "get_student",
+    "get_student_by_student_id",
+    "create_student",
+    "update_student",
+    "get_students",
+    "delete_student",
 ]
