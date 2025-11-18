@@ -7,6 +7,7 @@
 VENV_DIR := .venv
 PYTHON := $(VENV_DIR)/Scripts/python
 UV := $(VENV_DIR)/Scripts/uv
+PORT := 8000
 
 # 帮助信息
 .PHONY: help
@@ -34,7 +35,7 @@ format:
 # 启动开发服务器
 .PHONY: dev
 dev:
-	@$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 5000
+	@$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(PORT)
 
 # 运行测试
 .PHONY: test

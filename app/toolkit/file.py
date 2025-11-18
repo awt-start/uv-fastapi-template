@@ -4,13 +4,16 @@ import hashlib
 from pathlib import Path
 from typing import Optional
 
+
 def get_file_size(file_path: str) -> int:
     """获取文件大小(字节)"""
     return os.path.getsize(file_path)
 
+
 def file_exists(file_path: str) -> bool:
     """检查文件是否存在"""
     return os.path.isfile(file_path)
+
 
 def get_file_hash(file_path: str, algorithm: str = "md5") -> str:
     """计算文件哈希值"""
@@ -19,6 +22,7 @@ def get_file_hash(file_path: str, algorithm: str = "md5") -> str:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_func.update(chunk)
     return hash_func.hexdigest()
+
 
 def safe_path_join(*parts: str) -> str:
     """安全地拼接路径(防止目录穿越)"""
